@@ -117,7 +117,7 @@ function extract_loc(position) {
 
 
 module.exports = {
-    getImageInfo: async function(pathSet) {
+    getImageInfo: function(pathSet) {
         var imageInfo = {
             "imageByKey": {},
             "sequenceByKey": {},
