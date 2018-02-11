@@ -24,6 +24,26 @@ function Quaternion(x,y,z,w){
 }
 
 /**
+ * Normalize the quaternion. Note that this changes the values of the quaternion.
+ * @method normalize
+ */
+Quaternion.prototype.normalize = function(){
+    var l = Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z+this.w*this.w);
+    if ( l === 0 ) {
+        this.x = 0;
+        this.y = 0;
+        this.z = 0;
+        this.w = 0;
+    } else {
+        l = 1 / l;
+        this.x *= l;
+        this.y *= l;
+        this.z *= l;
+        this.w *= l;
+    }
+};
+
+/**
  * Convert the quaternion to euler angle representation. Order: YZX, as this page describes: http://www.euclideanspace.com/maths/standards/index.htm
  * @method toEuler
  * @param {Vec3} target
@@ -64,4 +84,28 @@ Quaternion.prototype.toEuler = function(target,order){
     target.y = heading;
     target.z = attitude;
     target.x = bank;
+};
+
+/**
+ * Converts the quaternion to axis/angle representation.
+ * @method toAxisAngle
+ * @param {Vec3} targetAxis Optional. A vector object to reuse for storing the axis.
+ * @return Array An array, first elemnt is the axis and the second is the angle in radians.
+ */
+Quaternion.prototype.toAxisAngle = function(targetAxis){
+    targetAxis = targetAxis || new Vec3();
+    this.normalize(); // if w>1 acos and sqrt will produce errors, this cant happen if quaternion is normalised
+    var angle = 2 * Math.acos(this.w);
+    var s = Math.sqrt(1-this.w*this.w); // assuming quaternion normalised then w is less than 1, so term always positive.
+    if (s < 0.001) { // test to avoid divide by zero, s is always positive due to sqrt
+        // if s close to zero then direction of axis not important
+        targetAxis.x = this.x; // if it is important that axis is normalised then replace with x=1; y=z=0;
+        targetAxis.y = this.y;
+        targetAxis.z = this.z;
+    } else {
+        targetAxis.x = this.x / s; // normalise axis
+        targetAxis.y = this.y / s;
+        targetAxis.z = this.z / s;
+    }
+    return [targetAxis,angle];
 };

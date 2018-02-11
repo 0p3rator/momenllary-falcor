@@ -42,7 +42,7 @@ var image = {
     },
     "height": {
         "$type": "atom",
-        "value": 960
+        "value": 1200
     },
     "key": {
         "$type": "atom",
@@ -73,7 +73,7 @@ var image = {
     },
     "width": {
         "$type": "atom",
-        "value": 1280
+        "value": 1920
     },
     "sequence": {
         "$type": "ref",
@@ -144,21 +144,25 @@ module.exports = {
                     let sequenceKey = row["image_packet_id"]
                     //获取地理位置信息
                     cl = extract_loc(pos);
-                    // console.log(image["cl"]);
+                    // console.log(image["cl"])
                     let imageTemp = JSON.parse(JSON.stringify(image));
-                    imageTemp["atomic_scale"]["value"] = 1000;
+                    // imageTemp["atomic_scale"]["value"] = 1000;
                     imageTemp["cl"]["value"] = {"lon": parseFloat(cl[0]), "lat": parseFloat(cl[1])};
                     // image["height"]["value"] = parseFloat(cl[2]);
                     imageTemp["sequence"]["value"][1] = sequenceKey;
                     imageTemp["key"]["value"] = imageKey;
                     let euler = {x:0,y:0,z:0}
-                    let q = new Quaternion(row["qw"],row["qy"],row["qz"],row["qw"]);
+                    let q = new Quaternion(row["qx"],row["qy"],row["qz"],row["qw"]);
                     q.toEuler(euler);
-                    imageTemp.c_rotation.value = euler;
+                    let angleAxis = {x:0,y:0,z:0};
+                    q.toAxisAngle(angleAxis);
+                    imageTemp.c_rotation.value = [angleAxis.x,angleAxis.y,angleAxis.z];
                     imageTemp.ca.value = euler.z * 57.3;
-                    imageTemp.cca.value = euler.z * 59;
+                    imageTemp.cca.value = euler.z * 57.3;
+                    imageTemp.orientation = 1;
                     imageTemp["l"]["value"] = {"lon": parseFloat(cl[0]).toFixed(7), "lat": parseFloat(cl[1]).toFixed(7)};
-                    console.log(clc.red(euler.z * 57.3));
+                    console.log(clc.red(JSON.stringify(euler)));
+                    console.log(clc.red(JSON.stringify(angleAxis)));
 
 
                     sequence["key"]["value"] = sequenceKey;
