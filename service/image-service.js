@@ -1,16 +1,20 @@
 const clc = require('cli-color')
 const db = require('../database/postgresql');
-var Quaternion = require('../math/quaternion');
+const three = require('three');
+const Quaternion = require('../math/quaternion')
+
+var test = require('../math/quat2Mat4');
+
 
 
 var image = {
     "atomic_scale": {
         "$type": "atom",
-        "value": 0.4166163159315136
+        "value": 1
     },
     "c_rotation": {
         "$type": "atom",
-        "value": [0.6914206311834217, -2.0507970098466672, 1.718235435702727]
+        "value": null
     },
     // 航向角
     "ca": {
@@ -20,7 +24,7 @@ var image = {
     //
     "calt": {
         "$type": "atom",
-        "value": 1.1869385540485382
+        "value": 1
     },
     "captured_at": {
         "$type": "atom",
@@ -34,7 +38,7 @@ var image = {
     //
     "cfocal": {
         "$type": "atom",
-        "value": 0.8442266291127437
+        "value": 1
     },
     "cl": {
         "$type": "atom",
@@ -104,9 +108,7 @@ var user = {
     }
 }
 
-
-
-function extract_loc(position) {
+function ExtractLoc(position) {
     let indexStart = position.indexOf('(');
     let indexEnd = position.indexOf(')');
     let loc = position.substring(indexStart + 1, indexEnd);
@@ -138,12 +140,13 @@ module.exports = {
             promiseArray.push(
                 db.query('select keyframes.*, ST_AsText(geom) from keyframes where id = $1', [parseInt(imageKey)])
                 .then(res => {
+                    console.log(res)
                     // console.log(res.rows[0]);
                     let row = res.rows[0];
                     let pos = row["st_astext"];
                     let sequenceKey = row["image_packet_id"]
                     //获取地理位置信息
-                    cl = extract_loc(pos);
+                    cl = ExtractLoc(pos);
                     // console.log(image["cl"])
                     let imageTemp = JSON.parse(JSON.stringify(image));
                     // imageTemp["atomic_scale"]["value"] = 1000;
@@ -151,18 +154,19 @@ module.exports = {
                     // image["height"]["value"] = parseFloat(cl[2]);
                     imageTemp["sequence"]["value"][1] = sequenceKey;
                     imageTemp["key"]["value"] = imageKey;
-                    let euler = {x:0,y:0,z:0}
-                    let q = new Quaternion(row["qx"],row["qy"],row["qz"],row["qw"]);
-                    q.toEuler(euler);
+                    let q = new three.Quaternion(row["qx"],row["qy"],row["qz"],row["qw"]);
+                    let euler = new three.Euler().setFromQuaternion(q, "ZYX");
                     let angleAxis = {x:0,y:0,z:0};
-                    q.toAxisAngle(angleAxis);
-                    imageTemp.c_rotation.value = [angleAxis.x,angleAxis.y,angleAxis.z];
+                    let qOwn = new Quaternion(row["qx"],row["qy"],row["qz"],row["qw"]);
+                    let result = qOwn.toAxisAngle(angleAxis);
+                    // imageTemp.c_rotation.value = [angleAxis.x,angleAxis.y,angleAxis.z];
                     imageTemp.ca.value = euler.z * 57.3;
-                    imageTemp.cca.value = euler.z * 57.3;
+                    imageTemp.cca.value = result[1] * 57.3;
+                    console.log(result[1]);
                     imageTemp.orientation = 1;
                     imageTemp["l"]["value"] = {"lon": parseFloat(cl[0]).toFixed(7), "lat": parseFloat(cl[1]).toFixed(7)};
                     console.log(clc.red(JSON.stringify(euler)));
-                    console.log(clc.red(JSON.stringify(angleAxis)));
+                    console.log(clc.red(JSON.stringify(result)));
 
 
                     sequence["key"]["value"] = sequenceKey;
@@ -189,7 +193,6 @@ module.exports = {
         })
         return Promise.all(promiseArray)
             .then((images) => {
-                console.log(clc.red("I am here"));
                 // console.log(images)
                 // console.log(clc.red(JSON.stringify(images,null,2)))
                 images.forEach(image => {

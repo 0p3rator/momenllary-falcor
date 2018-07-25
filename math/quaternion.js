@@ -1,5 +1,4 @@
 module.exports = Quaternion;
-
 function Quaternion(x,y,z,w){
     /**
      * @property {Number} x
