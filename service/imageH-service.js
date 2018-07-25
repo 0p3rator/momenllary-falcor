@@ -18,7 +18,7 @@ module.exports = {
         const imagesHKey = pathSet["imagesH"];
         imageHInfo["imagesByH"][imagesHKey] = {};
         // console.log(imagesHKey);
-        return db.query('select id from keyframes where ST_GeoHash(geom,7) = $1 limit 99',imagesHKey)
+        return db.query('select id from keyframes where ST_GeoHash(geom,7) = $1 limit 999',imagesHKey)
             .then(res => {
                 imageHInfo["imageByKey"] = {};
                 res.rows.map((row,index) => {
